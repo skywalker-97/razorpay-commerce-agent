@@ -196,24 +196,38 @@ export default function CustomerAgent() {
         },
         modal: {
           ondismiss: async () => {
-            await api.post('/payment/failure', {
-              razorpayOrderId,
-              reason: 'User dismissed the payment window',
-            });
-            toast.error('Payment cancelled');
+            try {
+              await api.post('/payment/failure', {
+                razorpayOrderId,
+                reason: 'User cancelled payment',
+                amount,
+              });
+            } catch (e) {
+              console.error('Failed to log payment cancellation:', e);
+            }
+            toast.error('Payment cancelled — logged to audit trail');
             setPayLoading(false);
+            navigate(`/payment/failure?reason=${encodeURIComponent('User cancelled payment')}`);
           },
         },
       };
 
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', async (response) => {
-        await api.post('/payment/failure', {
-          razorpayOrderId,
-          reason: response.error.description,
-          code: response.error.code,
-        });
-        navigate(`/payment/failure?reason=${encodeURIComponent(response.error.description)}`);
+        const failReason = response.error?.description || 'Payment declined by bank';
+        const failCode = response.error?.code || 'UNKNOWN';
+        try {
+          await api.post('/payment/failure', {
+            razorpayOrderId,
+            reason: failReason,
+            code: failCode,
+            amount,
+          });
+        } catch (e) {
+          console.error('Failed to log payment failure:', e);
+        }
+        toast.error(`Payment failed: ${failReason}`);
+        navigate(`/payment/failure?reason=${encodeURIComponent(failReason)}`);
       });
       rzp.open();
     } catch (err) {
