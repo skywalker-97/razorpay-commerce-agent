@@ -84,32 +84,53 @@ export default function Checkout() {
         prefill: { name: user.name, email: user.email },
         theme: { color: '#0ea5e9' },
         handler: async (response) => {
-          const verifyRes = await api.post('/payment/verify', {
-            razorpayOrderId: response.razorpay_order_id,
-            razorpayPaymentId: response.razorpay_payment_id,
-            razorpaySignature: response.razorpay_signature,
-            cartId: cart?._id,
-          });
-          toast.success('Payment successful!');
-          navigate(`/payment/success?orderId=${verifyRes.data.orderId}`);
+          try {
+            const verifyRes = await api.post('/payment/verify', {
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+              cartId: cart?._id,
+            });
+            toast.success('Payment successful!');
+            navigate(`/payment/success?orderId=${verifyRes.data.orderId}`);
+          } catch (err) {
+            toast.error('Payment verification failed');
+            setPaying(false);
+          }
         },
         modal: {
           ondismiss: async () => {
-            await api.post('/payment/failure', { razorpayOrderId, reason: 'User dismissed payment modal', amount: orderRes.data.cartTotal });
-            setPaying(false);
+            try {
+              await api.post('/payment/failure', {
+                razorpayOrderId,
+                reason: 'User cancelled payment',
+                amount: orderRes.data.cartTotal,
+              });
+            } catch (e) {
+              console.error('Failed to log payment cancellation:', e);
+            }
+            toast.error('Payment cancelled — logged to audit trail');
+            navigate(`/payment/failure?reason=${encodeURIComponent('User cancelled payment')}`);
           },
         },
       };
 
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', async (r) => {
-        await api.post('/payment/failure', {
-          razorpayOrderId,
-          reason: r.error.description,
-          code: r.error.code,
-          amount: orderRes.data.cartTotal,
-        });
-        navigate(`/payment/failure?reason=${encodeURIComponent(r.error.description)}`);
+        const failReason = r.error?.description || 'Payment declined by bank';
+        const failCode = r.error?.code || 'UNKNOWN';
+        try {
+          await api.post('/payment/failure', {
+            razorpayOrderId,
+            reason: failReason,
+            code: failCode,
+            amount: orderRes.data.cartTotal,
+          });
+        } catch (e) {
+          console.error('Failed to log payment failure:', e);
+        }
+        toast.error(`Payment failed: ${failReason}`);
+        navigate(`/payment/failure?reason=${encodeURIComponent(failReason)}`);
       });
       rzp.open();
     } catch (err) {
