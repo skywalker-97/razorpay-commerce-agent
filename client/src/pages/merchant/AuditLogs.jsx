@@ -182,6 +182,37 @@ export default function AuditLogs() {
                             <p className="text-red-400 text-xs font-medium">{log.error}</p>
                           </div>
                         )}
+
+                        {/* Dedicated PAYMENT_FAILED Summary Banner */}
+                        {log.action === 'PAYMENT_FAILED' && (
+                          <div className="mt-3 bg-red-950/40 border border-red-500/30 rounded-xl p-3 space-y-1.5">
+                            <div className="flex items-center gap-2 mb-2">
+                              <XCircle className="w-4 h-4 text-red-400" />
+                              <span className="text-red-400 font-bold text-xs uppercase tracking-widest">🔴 Payment Failed</span>
+                            </div>
+                            {log.razorpayOrderId && (
+                              <p className="text-dark-300 text-xs font-mono">
+                                <span className="text-dark-500">Order:</span> {log.razorpayOrderId}
+                              </p>
+                            )}
+                            {log.error && (
+                              <p className="text-red-300 text-xs">
+                                <span className="text-dark-500">Reason:</span> {log.error}
+                              </p>
+                            )}
+                            {log.metadata?.attemptNumber && (
+                              <p className="text-amber-400 text-xs font-mono">
+                                <span className="text-dark-500">Attempt:</span> {log.metadata.attemptNumber} / {log.output?.maxAttempts || 3}
+                              </p>
+                            )}
+                            {log.amount && (
+                              <p className="text-dark-300 text-xs font-mono">
+                                <span className="text-dark-500">Amount:</span> {formatINR(log.amount)}
+                              </p>
+                            )}
+                            <p className="text-dark-600 text-[10px] font-mono uppercase pt-1">Auto-retry: DISABLED · No funds charged</p>
+                          </div>
+                        )}
                         
                         {log.sessionId && (
                           <div className="mt-3 flex items-center gap-2 text-[10px] font-mono text-dark-500 bg-dark-900/50 px-2 py-1 rounded w-fit border border-dark-800">

@@ -252,7 +252,7 @@ const handleFailure = async (req, res) => {
   const sessionId = req.headers['x-session-id'];
 
   try {
-    const { razorpayOrderId, reason, code } = req.body;
+    const { razorpayOrderId, reason, code, amount } = req.body;
 
     const payment = await Payment.findOneAndUpdate(
       { razorpayOrderId },
@@ -260,20 +260,40 @@ const handleFailure = async (req, res) => {
       { new: true }
     );
 
+    const attemptNumber = payment?.attempts || 1;
+    const failedAmount = amount || payment?.amount;
+
     await auditService.log({
-      userId, sessionId,
+      userId,
+      sessionId,
       action: 'PAYMENT_FAILED',
       razorpayOrderId,
+      amount: failedAmount,
       error: reason || 'Payment failed by user or bank',
       status: 'failure',
-      metadata: { code },
+      approvalStatus: 'rejected',
+      input: {
+        razorpayOrderId,
+        reason: reason || 'Payment failed by user or bank',
+        failureCode: code || 'UNKNOWN',
+        attemptNumber,
+      },
+      output: {
+        paymentStatus: 'failed',
+        canRetry: payment ? attemptNumber < payment.maxAttempts : true,
+        attemptsUsed: attemptNumber,
+        maxAttempts: payment?.maxAttempts || 3,
+        amountFailed: failedAmount,
+        autoRetry: false,
+      },
+      metadata: { code, attemptNumber },
     });
 
     res.json({
       success: true,
       message: 'Payment failure recorded. No automatic retry initiated.',
-      canRetry: payment ? payment.attempts < payment.maxAttempts : true,
-      attempts: payment?.attempts || 1,
+      canRetry: payment ? attemptNumber < payment.maxAttempts : true,
+      attempts: attemptNumber,
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

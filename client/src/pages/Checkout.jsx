@@ -95,7 +95,7 @@ export default function Checkout() {
         },
         modal: {
           ondismiss: async () => {
-            await api.post('/payment/failure', { razorpayOrderId, reason: 'User dismissed' });
+            await api.post('/payment/failure', { razorpayOrderId, reason: 'User dismissed payment modal', amount: orderRes.data.cartTotal });
             setPaying(false);
           },
         },
@@ -103,7 +103,12 @@ export default function Checkout() {
 
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', async (r) => {
-        await api.post('/payment/failure', { razorpayOrderId, reason: r.error.description });
+        await api.post('/payment/failure', {
+          razorpayOrderId,
+          reason: r.error.description,
+          code: r.error.code,
+          amount: orderRes.data.cartTotal,
+        });
         navigate(`/payment/failure?reason=${encodeURIComponent(r.error.description)}`);
       });
       rzp.open();
