@@ -8,7 +8,26 @@
     "dev": "nodemon server.js",
     "seed": "node utils/seed.js"
   },
-  "keywords": ["razorpay", "ai", "commerce", "agent"],
+  "keywords": [
+    "razorpay",
+    "ai",
+    "commerce",
+    "agent"
+  ],
   "author": "Hackathon Team",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@google/genai": "^2.18.0",
+    "@google/generative-ai": "^0.24.1",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.9.3",
+    "morgan": "^1.11.0",
+    "razorpay": "^2.9.8",
+    "uuid": "^14.0.2"
+  }
 }
