@@ -101,16 +101,22 @@ export default function Cart() {
                 const isRemoving = removing === pid;
                 const isUpdating = updating === pid;
                 return (
-                  <div key={pid || item.name} className="card flex gap-4 transition-opacity duration-200" style={{ opacity: isRemoving ? 0.4 : 1 }}>
-                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-dark-700 flex-shrink-0">
-                      <img
-                        src={item.image || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100'}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100'; }}
-                      />
+                  <div key={pid || item.name} className="card flex flex-col sm:flex-row gap-4 transition-opacity duration-200" style={{ opacity: isRemoving ? 0.4 : 1 }}>
+                    <div className="flex gap-4 w-full sm:w-auto">
+                      <div className="w-20 h-20 rounded-xl overflow-hidden bg-dark-700 flex-shrink-0">
+                        <img
+                          src={item.image || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100'}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100'; }}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0 sm:hidden flex flex-col justify-center">
+                         <h3 className="font-semibold text-white line-clamp-2 text-sm">{item.name}</h3>
+                         <p className="text-primary-400 font-bold">{formatINR(item.price)}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 hidden sm:block">
                       <h3 className="font-semibold text-white line-clamp-2">{item.name}</h3>
                       <p className="text-primary-400 font-bold text-lg">{formatINR(item.price)}</p>
                       {item.addedViaAI && (
@@ -123,7 +129,7 @@ export default function Cart() {
                         </div>
                       )}
                     </div>
-                    <div className="flex flex-col items-end justify-between gap-2">
+                    <div className="flex sm:flex-col items-center sm:items-end justify-between gap-4 sm:gap-2 mt-4 sm:mt-0 pt-4 sm:pt-0 border-t border-dark-700 sm:border-0">
                       {/* Delete button */}
                       <button
                         onClick={() => handleRemove(item)}

@@ -4,6 +4,7 @@ import { FileText, Bot, ShoppingCart, CreditCard, CheckCircle, XCircle, Info, Za
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import useSocket from '../../hooks/useSocket';
 
 const formatINR = (amount) =>
   amount ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount) : '—';
@@ -48,6 +49,25 @@ export default function AuditLogs() {
   const [expandedId, setExpandedId] = useState(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+
+  const { socket, isConnected } = useSocket();
+
+  useEffect(() => {
+    if (socket && isConnected && user) {
+      socket.emit('join_merchant_room', user._id);
+
+      const handleNewLog = (newLog) => {
+        setLogs(prev => [newLog, ...prev]);
+        setTotal(prev => prev + 1);
+      };
+
+      socket.on('new_audit_log', handleNewLog);
+
+      return () => {
+        socket.off('new_audit_log', handleNewLog);
+      };
+    }
+  }, [socket, isConnected, user]);
 
   useEffect(() => { if (!user) { navigate('/login'); return; } fetchLogs(); }, [filterAction, filterStatus, page]);
 

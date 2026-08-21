@@ -1,4 +1,5 @@
 const AuditLog = require('../models/AuditLog');
+const { getIo } = require('../utils/socket');
 
 const auditService = {
   async log({ userId, sessionId, action, toolName, input, output, amount, currency, approvalStatus, orderId, paymentId, razorpayOrderId, status, error, ipAddress, userAgent, metadata }) {
@@ -23,6 +24,14 @@ const auditService = {
         metadata,
       });
       await log.save();
+
+      // Emit real-time event to merchant room
+      const io = getIo();
+      if (io) {
+        // We might want to populate it before emitting if needed, but the client can refetch or use this raw
+        io.to('merchant_room').emit('new_audit_log', log);
+      }
+
       return log;
     } catch (err) {
       console.error('Audit log error:', err.message);

@@ -3,12 +3,13 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const http = require('http');
 const connectDB = require('./config/database');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
+const { initSocket } = require('./utils/socket');
 
 const app = express();
-
-// Connect to MongoDB
+const server = http.createServer(app);
 connectDB();
 
 // Security middleware
@@ -34,6 +35,9 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-Id'],
 }));
+
+// Initialize Socket.io
+initSocket(server, allowedOrigins);
 
 // Body parser
 app.use(express.json({ limit: '10mb' }));
@@ -66,10 +70,10 @@ app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 RazorPay Commerce Agent server running on port ${PORT}`);
   console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Client URL: ${process.env.CLIENT_URL || 'http://localhost:5173'}`);
 });
 
-module.exports = app;
+module.exports = server;
